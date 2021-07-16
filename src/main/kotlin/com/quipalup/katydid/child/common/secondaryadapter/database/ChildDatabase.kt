@@ -13,6 +13,7 @@ import com.quipalup.katydid.child.common.secondaryadapter.database.StaticYoungHu
 import com.quipalup.katydid.child.common.secondaryadapter.database.StaticYoungHumans.MONICA
 import com.quipalup.katydid.child.common.secondaryadapter.database.StaticYoungHumans.VICTOR
 import com.quipalup.katydid.child.search.domain.ChildField
+import com.quipalup.katydid.child.search.domain.FindChildByIdError
 import com.quipalup.katydid.child.search.domain.SearchChildrenError
 import com.quipalup.katydid.common.genericsearch.Filter
 import com.quipalup.katydid.common.genericsearch.PageResult
@@ -34,6 +35,17 @@ class ChildDatabase : ChildRepository {
             return listOf(JOHN, MARIA).let { PageResult(it.size.toLong(), it) }.right()
 
         return SearchChildrenError.Unknown.left()
+    }
+
+    override fun findById(id: Id): Either<FindChildByIdError, Child> = id.value.let { uuid ->
+        childrenList.filter {
+            it.id.value == uuid
+        }.let {
+            when {
+                it.isEmpty() -> FindChildByIdError.DoesNotExist.left()
+                else -> it.first().right()
+            }
+        }
     }
 }
 
@@ -110,3 +122,5 @@ private object StaticYoungHumans {
         )
     )
 }
+
+val childrenList = listOf<Child>(BLANCA, CRISTINA, DAVID, MARIA, MONICA, JOHN, VICTOR)
