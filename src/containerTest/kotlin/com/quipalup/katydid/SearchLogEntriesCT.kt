@@ -2,6 +2,7 @@ package com.quipalup.katydid
 
 import com.quipalup.katydid.common.id.toChildId
 import com.quipalup.katydid.common.id.toId
+import com.quipalup.katydid.logentry.domain.ChildId
 import com.quipalup.katydid.logentry.domain.LogEntryRepositoryPC
 import com.quipalup.katydid.logentry.domain.LogEntry_
 import io.restassured.RestAssured
@@ -44,7 +45,8 @@ class SearchLogEntriesCT {
         repository.save(notThisChildsNapLogEntry)
 
         Given {
-            param("filter[childId]", childId.value().toString())
+            param("filter[childId]", childId.value.toString())
+            param("included", child)
         } When {
             get("/log-entries")
         } Then {
@@ -55,9 +57,10 @@ class SearchLogEntriesCT {
     }
 
     companion object {
-        private val childId = UUID.randomUUID().toChildId()
-        private val mealId = UUID.randomUUID().toId()
-        private val napId = UUID.randomUUID().toId()
+        private val childId = UUID.fromString("5ee62461-adb8-4618-a110-06290a787223").toId()
+        private val mealId = UUID.fromString("93acd93f-cc03-49ab-b761-b2b2810ad505").toId()
+        private val napId = UUID.fromString("7a49cfd6-6a8a-404c-ad97-c51763341fe1").toId()
+        private val child = "child"
 
         private val time = ZonedDateTime
             .of(2021, 6, 23, 20, 30, 50, 4, ZoneId.of("UTC"))
@@ -68,9 +71,12 @@ class SearchLogEntriesCT {
         private const val duration: Long = 3
         private const val unit = "grams"
 
+        private val childName = "Blanca"
+        private val isPresent = true
+
         private val thisChildsMealLogEntry = LogEntry_.Meal(
             id = mealId,
-            childId = childId,
+            childId = ChildId(childId),
             time = time,
             description = description,
             amount = amount,
@@ -78,7 +84,7 @@ class SearchLogEntriesCT {
         )
         private val thisChildsNapLogEntry = LogEntry_.Nap(
             id = napId,
-            childId = childId,
+            childId = ChildId(childId),
             time = time,
             duration = duration
         )
@@ -93,22 +99,10 @@ class SearchLogEntriesCT {
             {
                 "data": [
                     {
-                        "id": "${thisChildsNapLogEntry.id.value}",
-                        "type": "nap",
-                        "attributes": {
-                            "childId": "${childId.value()}",
-                            "time": $time,
-                            "duration": $duration
-                        },
-                        links: {
-                            iconURL: "https://katydid-web-client.s3.us-east-2.amazonaws.com/icons/nap-icon.svg"
-                        }
-                    },
-                    {
                         "id": "${thisChildsMealLogEntry.id.value}",
                         "type": "meal",
                         "attributes": {
-                            "childId": "${childId.value()}",
+                            "childId": "${childId.value}",
                             "time": $time,
                             "description": "$description",
                             "amount": $amount,
@@ -116,6 +110,41 @@ class SearchLogEntriesCT {
                         },
                         links: {
                             iconURL: "https://katydid-web-client.s3.us-east-2.amazonaws.com/icons/meal-icon.svg"
+                        },
+                          relationships: {
+                            "child": {
+                                "id": "${childId.value}",
+                                "type": "child"
+                            }
+                        }
+                    },
+                                        {
+                        "id": "${thisChildsNapLogEntry.id.value}",
+                        "type": "nap",
+                        "attributes": {
+                            "childId": "${childId.value}",
+                            "time": $time,
+                            "duration": $duration
+                        },
+                        links: {
+                            iconURL: "https://katydid-web-client.s3.us-east-2.amazonaws.com/icons/nap-icon.svg"
+                        },
+                         relationships: {
+                            "child": {
+                                "id": "${childId.value}",
+                                "type": "child"
+                            }
+                        }
+                    }
+                ],
+                 "included": [
+                    {
+                        "id": "${childId.value}",
+                        "type": "child",
+                        "attributes": {
+                            "name": "$childName",
+                            "portraitURL": "https://katydid-web-client.s3.us-east-2.amazonaws.com/img/profile/${childId.value}.png",
+                            "isPresent": $isPresent
                         }
                     }
                 ]
